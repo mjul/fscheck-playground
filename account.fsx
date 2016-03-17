@@ -61,3 +61,35 @@ let ``balance of account with a single deposit is the amount deposited`` (a:deci
 Check.Quick ``balance of account with a single deposit is the amount deposited``
 
 
+// Create an Arbitrary generator for positive decimal values
+// This is used as a strategy by FsCheck to create randomized input values
+
+// Here we use a special type with pattern matching as recommended in
+// the FsCheck Tips and Tricks
+
+type PositiveDecimal = PositiveDecimal of decimal with
+  static member op_Explicit(PositiveDecimal d) = d
+
+type ArbitraryModifiers =
+    static member PositiveDecimal() = 
+        Arb.from<decimal> 
+        |> Arb.filter (fun d -> d > 0m) 
+        |> Arb.convert PositiveDecimal decimal  
+
+Arb.register<ArbitraryModifiers>()
+
+// Check the generator itself
+let ``generated decimals should be positive`` (PositiveDecimal d) = d > 0m
+Check.Quick ``generated decimals should be positive``
+
+
+// We can now rewrite the test above
+
+let ``balance of account with a single deposit is the amount deposited (refactored)`` (PositiveDecimal a) =
+    let amount = Amount(a)
+    let optacc' = deposit amount emptyAccount
+    match optacc' with
+        | Some acc' -> balance acc' = amount
+        | None -> false
+Check.Quick ``balance of account with a single deposit is the amount deposited (refactored)``
+
