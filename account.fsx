@@ -74,13 +74,14 @@ type ArbitraryModifiers =
     static member PositiveDecimal() = 
         Arb.from<decimal> 
         |> Arb.filter (fun d -> d > 0m) 
-        |> Arb.convert PositiveDecimal decimal  
+        |> Arb.convert PositiveDecimal decimal        
 
 Arb.register<ArbitraryModifiers>()
 
 // Check the generator itself
 let ``generated decimals should be positive`` (PositiveDecimal d) = d > 0m
 Check.Quick ``generated decimals should be positive``
+
 
 
 // We can now rewrite the test above
@@ -92,4 +93,35 @@ let ``balance of account with a single deposit is the amount deposited (refactor
         | Some acc' -> balance acc' = amount
         | None -> false
 Check.Quick ``balance of account with a single deposit is the amount deposited (refactored)``
+
+
+// In order to test sequences we need another Arbitrary input
+// generator for sequences
+
+type ArbitrarySequenceModifiers =
+    static member PositiveDecimals() =
+        Arb.from<PositiveDecimal>
+        |> Arb.toGen
+        |> Gen.nonEmptyListOf
+        |> Arb.fromGen
+        |> Arb.convert List.toSeq Seq.toList
+Arb.register<ArbitrarySequenceModifiers>()
+
+
+let ``balance of multiple deposits should be their sum`` (amounts : seq<PositiveDecimal>) =
+    let depositNext state (PositiveDecimal amount) =
+        match state with
+            | Some account -> deposit (Amount amount) account
+            | None -> None
+    let optacc = Seq.fold depositNext (Some emptyAccount) amounts
+    match optacc with
+        | Some acc ->
+            let expectedBalance = amounts |> Seq.sumBy (fun (PositiveDecimal a) -> a) |> Amount
+            balance acc = expectedBalance
+        | None -> false
+
+Check.Quick ``balance of multiple deposits should be their sum``
+
+// This check shows that the property is falsifiable as we can get
+// overflow exceptions.
 
