@@ -120,8 +120,19 @@ let ``balance of multiple deposits should be their sum`` (amounts : seq<Positive
             balance acc = expectedBalance
         | None -> false
 
+// The following check shows that the property is falsifiable as we can get
+// overflow exceptions. FsCheck really checks the corner cases!
 Check.Quick ``balance of multiple deposits should be their sum``
 
-// This check shows that the property is falsifiable as we can get
-// overflow exceptions.
 
+// We can do better with an Arbitrary number generator where we limit
+// the range of the amounts generated to postive numbers less or equal to the World GDP.
+let worldGdp = 514.9e12m // in DKK (source: Wolfram Alpha)
+
+type ReasonableAmount = ReasonableAmount of Amount
+
+type ArbitraryAmountModifiers =
+    static member ReasonableAmount() =
+        Arb.from<decimal>
+        |> Arb.convert (fun d -> ReasonableAmount(Amount d)) (fun (ReasonableAmount (Amount a)) -> a)
+        //|> Arb.convert Amount (fun (Amount x) -> x)
