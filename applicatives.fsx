@@ -64,18 +64,26 @@ let generateClosePrice =
 let printRandomClosePrices () =
     let count = 5
     let data = FsCheck.Gen.sample 0 count generateClosePrice
-    for p in data do
-        let (Isin s) = p.Isin
-        printfn "%s %s %5.2f" s (p.Date.ToShortDateString()) (p.Close) 
+    data |> List.iter (printfn "%A")
 
 printRandomClosePrices()
 
 (* Example output:
 
-SE3827416411 19-10-2016 126.88
-NO7602821969 09-10-2016 171.33
-DK6641901138 05-10-2016 180.78
-SE1124529951 28-10-2016 178.19
-DK4260861378 16-10-2016 185.19
+{Isin = Isin "DK1226617135";
+ Date = 26-10-2016 00:00:00;
+ Close = 183.6M;}
+{Isin = Isin "NO6448729021";
+ Date = 08-10-2016 00:00:00;
+ Close = 128.13M;}
+{Isin = Isin "NO4837743083";
+ Date = 05-10-2016 00:00:00;
+ Close = 171.04M;}
+{Isin = Isin "SE4866475417";
+ Date = 21-10-2016 00:00:00;
+ Close = 105.55M;}
+{Isin = Isin "DK8830853027";
+ Date = 19-10-2016 00:00:00;
+ Close = 125.95M;}
 
    *)
